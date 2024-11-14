@@ -1,0 +1,54 @@
+import pyspark
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, lit
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType
+
+# Initialize SparkSession
+spark = SparkSession.builder.appName('HealthcareExample').getOrCreate()
+
+# Sample healthcare data
+# (PatientID, FirstName, LastName, DOB, Gender, BloodGroup, ConsultationFee)
+data = [
+    ("P001", "Ali", "Hassan", "1990-01-01", "M", "O+", 200),
+    ("P002", "Shane", "Smith", "1985-05-12", "F", "A+", 300),
+    ("P003", "Muzna", "Mallal", "1978-11-23", "M", "B-", 150),
+    ("P004", "Zaid", "Khan", "1995-07-14", "F", "AB+", 400),
+    ("P005", "Kiran", "Jogi", "1982-03-09", "F", "O-", -1)
+]
+
+columns = ["PatientID", "FirstName", "LastName", "DOB", "Gender", "BloodGroup", "ConsultationFee"]
+
+# Create DataFrame
+df = spark.createDataFrame(data=data, schema=columns)
+
+# Display schema and data
+df.show(truncate=False)
+
+# Convert ConsultationFee to Integer
+df2 = df.withColumn("ConsultationFee", col("ConsultationFee").cast("Integer"))
+df2.printSchema()
+df2.show(truncate=False)
+
+# Apply a discount of 10% on ConsultationFee
+df3 = df2.withColumn("DiscountedFee", col("ConsultationFee") * 0.9)
+df3.printSchema()
+df3.show(truncate=False)
+
+# Add a new column for Country (assuming all patients are from USA)
+df4 = df3.withColumn("Country", lit("USA"))
+df4.printSchema()
+df4.show(truncate=False)
+
+# Add multiple new columns for additional metadata
+df5 = df4.withColumn("Insurance", lit("Yes")) \
+          .withColumn("IsCritical", lit(False))
+df5.printSchema()
+df5.show(truncate=False)
+
+# Rename Gender to Sex
+df6 = df5.withColumnRenamed("Gender", "Sex")
+df6.show(truncate=False)
+
+# Drop the DiscountedFee column
+df7 = df6.drop("DiscountedFee")
+df7.show(truncate=False)
