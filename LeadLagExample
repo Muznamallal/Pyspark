@@ -1,0 +1,43 @@
+# Import required libraries
+from pyspark.sql import SparkSession
+from pyspark.sql.window import Window
+from pyspark.sql.functions import lag, lead
+
+# Initialize Spark session
+spark = SparkSession.builder.appName("HealthcareDataLagLeadExample").getOrCreate()
+
+# Sample healthcare data
+# Columns: PatientID, VisitDate, BloodPressure
+healthcare_data = [
+    (1, "2024-11-01", 120),  # Patient 1: Blood pressure readings across dates
+    (1, "2024-11-02", 118),
+    (1, "2024-11-03", 125),
+    (2, "2024-11-01", 135),  # Patient 2: Blood pressure readings across dates
+    (2, "2024-11-02", 140),
+    (2, "2024-11-03", 138)
+]
+
+# Create a DataFrame from the sample data
+df = spark.createDataFrame(healthcare_data, ["PatientID", "VisitDate", "BloodPressure"])
+
+# Define a window specification
+# Partition the data by 'PatientID' and order by 'VisitDate'
+window_spec = Window.partitionBy("PatientID").orderBy("VisitDate")
+
+# Add lag and lead columns to track previous and next blood pressure readings
+df_with_lag_lead = df \
+    .withColumn("PrevBloodPressure", lag("BloodPressure", 1).over(window_spec)) \
+    .withColumn("NextBloodPressure", lead("BloodPressure", 1).over(window_spec))
+
+# Show the resulting DataFrame
+df_with_lag_lead.show()
+
+# Explanation of the columns in the resulting DataFrame:
+# PatientID: The unique ID of the patient.
+# VisitDate: The date of the patient's visit.
+# BloodPressure: The recorded blood pressure on the visit date.
+# PrevBloodPressure: The blood pressure recorded during the previous visit (if available).
+# NextBloodPressure: The blood pressure recorded during the next visit (if available).
+
+# Stop the Spark session
+spark.stop()
